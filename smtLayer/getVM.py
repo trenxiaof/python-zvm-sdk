@@ -34,6 +34,7 @@ Each subfunction contains a list that has:
 subfuncHandler = {
     'CONSOLEOUTPUT': ['getConsole', lambda rh: getConsole(rh)],
     'DIRECTORY': ['getDirectory', lambda rh: getDirectory(rh)],
+    'ALLDIRECTORY': ['getAllDirectory', lambda rh: getAllDirectory(rh)],
     'HELP': ['help', lambda rh: help(rh)],
     'ISREACHABLE': ['checkIsReachable', lambda rh: checkIsReachable(rh)],
     'STATUS': ['getStatus', lambda rh: getStatus(rh)],
@@ -313,6 +314,34 @@ def getDirectory(rh):
                    str(rh.results['overallRC']))
     return rh.results['overallRC']
 
+def getAllDirectory(rh):
+    """
+    Get the virtual machine's directory statements.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'CMDVM'
+          subfunction - 'CMD'
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rh.printSysLog("Enter getVM.getAllDirectory")
+
+    parms = ["",""]
+    results = invokeSMCLI(rh, "Image_Name_Query_DM", parms)
+    if results['overallRC'] == 0:
+        results['response'] = re.sub('\*DVHOPT.*', '', results['response'])
+        rh.printLn("N", results['response'])
+    else:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+
+    rh.printSysLog("Exit getVM.getDirectory, rc: " +
+                   str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 def getStatus(rh):
     """
