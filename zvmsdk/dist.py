@@ -17,7 +17,6 @@ import abc
 import netaddr
 import os
 import six
-import sys
 from jinja2 import Environment, FileSystemLoader
 
 from zvmsdk import config
@@ -588,7 +587,8 @@ class LinuxDist(object):
     def get_template(self, module, template_name):
         relative_path = module + "/templates"
         base_path = os.path.dirname(os.path.abspath(__file__))
-        template_file_path = os.path.join(base_path, relative_path, template_name)
+        template_file_path = os.path.join(base_path, relative_path,
+                                          template_name)
         template_file_directory = os.path.dirname(template_file_path)
         template_loader = FileSystemLoader(searchpath=template_file_directory)
         env = Environment(loader=template_loader)
@@ -933,7 +933,8 @@ class rhel7(rhel):
                                              mount_point, new):
         template = self.get_template("volumeops", "rhel7_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
         return content
 
     def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
@@ -941,8 +942,10 @@ class rhel7(rhel):
                                              mount_point, connections):
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
         return content
+
 
 class rhel8(rhel7):
     """docstring for rhel8"""
@@ -961,7 +964,8 @@ class rhel8(rhel7):
         files = os.path.join(self._get_network_file_path(),
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
-        
+
+
 class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
