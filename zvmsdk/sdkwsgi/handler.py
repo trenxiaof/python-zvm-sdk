@@ -92,6 +92,9 @@ ROUTE_LIST = (
     ('/host/guests', {
         'GET': host.host_get_guest_list,
     }),
+    ('/host/{userid}/power_state', {
+        'GET': host.host_get_guest_power_state,
+    }),
     ('/host/diskpool', {
         'GET': host.host_get_disk_info,
     }),

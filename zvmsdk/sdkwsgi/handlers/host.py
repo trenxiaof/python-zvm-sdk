@@ -47,6 +47,11 @@ class HostAction(object):
         info = self.client.send_request('host_get_guest_list')
         return info
 
+    @validation.query_schema(host.userid_list_query)
+    def get_power_state(self, req, userid):
+        info = self.client.send_request('host_get_guest_power_state', userid)
+        return info
+
     @validation.query_schema(image.diskpool)
     def diskpool_get_info(self, req, poolname):
         info = self.client.send_request('host_diskpool_get_info',
@@ -96,6 +101,25 @@ def host_get_guest_list(req):
     req.response.content_type = 'application/json'
     req.response.status = util.get_http_code_from_sdk_return(info)
     return req.response
+
+@util.SdkWsgify
+@tokens.validate
+def host_get_guest_power_state(req):
+
+    def _host_get_guest_power_state(req, userid):
+        action = get_action()
+        return action.get_power_state(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _host_get_guest_power_state(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
 
 @util.SdkWsgify
 @tokens.validate
