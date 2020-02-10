@@ -71,6 +71,10 @@ class HOSTOps(object):
         with zvmutils.expect_invalid_resp_data(guest_list):
             return guest_list
 
+    def get_power_state(self, userid):
+        """Get power status of a z/VM instance."""
+        return self._smtclient.get_power_state(userid)
+
     def diskpool_get_info(self, pool):
         dp_info = self._smtclient.get_diskpool_info(pool)
         with zvmutils.expect_invalid_resp_data(dp_info):
