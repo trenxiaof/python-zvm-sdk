@@ -166,11 +166,22 @@ class SMTClient(object):
         :disks: A list dictionary to describe disk info, for example:
                 disk: [{'size': '1g',
                        'format': 'ext3',
-                       'disk_pool': 'ECKD:eckdpool1'}]
+                       'disk_pool': 'ECKD:eckdpool1'},
+                       {'size': '1g',
+                       'format': 'ext3'}]
 
         """
 
         for idx, disk in enumerate(disk_list):
+            if disk.get('disk_pool') is None:
+                disk['disk_pool'] = CONF.zvm.disk_pool
+            # Check disk_pool, if it's not configured(the default vaule is None),
+            # remove from disk_list
+            if disk.get('disk_pool') is None:
+                LOG.info('disk_pool not configured for sdkserver')
+                disk_list.remove(disk)
+                continue
+
             if 'vdev' in disk:
                 # this means user want to create their own device number
                 vdev = disk['vdev']
@@ -180,9 +191,6 @@ class SMTClient(object):
 
             self._add_mdisk(userid, disk, vdev)
             disk['vdev'] = vdev
-
-            if disk.get('disk_pool') is None:
-                disk['disk_pool'] = CONF.zvm.disk_pool
 
             sizeUpper = disk.get('size').strip().upper()
             sizeUnit = sizeUpper[-1]
@@ -643,6 +651,10 @@ class SMTClient(object):
         size = disk['size']
         fmt = disk.get('format', 'ext4')
         disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+        # Check disk_pool, if it's None, do nothing
+        if disk_pool is None:
+            LOG.info('disk_pool not configured for sdkserver')
+            return
         [diskpool_type, diskpool_name] = disk_pool.split(':')
 
         if (diskpool_type.upper() == 'ECKD'):

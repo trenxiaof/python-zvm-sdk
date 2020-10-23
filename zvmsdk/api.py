@@ -279,12 +279,18 @@ class SDKAPI(object):
         disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
         :returns: Dictionary describing disk pool usage info
         """
-        # disk_pool must be assigned. disk_pool default to None because
+        # disk_pool is optional. disk_pool default to None because
         # it is more convenient for users to just type function name when
-        # they want to get the disk pool info of CONF.zvm.disk_pool
+        # they want to get the disk pool info of CONF.zvm.disk_pool.
+        # We support disk_pool not configured, the default value of
+        # CONF.zvm.disk_pool is None, if it's configured, the format must be
+        # "ECKD:eckdpool" or "FBA:fbapool"
         if disk_pool is None:
             disk_pool = CONF.zvm.disk_pool
 
+        if disk_pool is None:
+            LOG.info('disk_pool not configured for sdkserver')
+            return {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'
                    'disk_pool, eg. ECKD:eckdpool')
@@ -731,7 +737,7 @@ class SDKAPI(object):
                the image that will be deployed on this disk.
                'disk_pool': optional, if not specified, the disk will be
                created by using the value from configure file,the format is
-               ECKD:eckdpoolname or FBA:fbapoolname.
+               ECKD:eckdpoolname or FBA:fbapoolname or None.
 
                For example:
                [{'size': '1g',
@@ -739,12 +745,18 @@ class SDKAPI(object):
                'disk_pool': 'ECKD:eckdpool1'},
                {'size': '200000',
                'disk_pool': 'FBA:fbapool1',
-               'format': 'ext3'}]
+               'format': 'ext3'},
+               {'size': '1g',
+                'format': 'ext3'}]
                In this case it will create one disk 0100(in case the vdev
                for root disk is 0100) with size 1g from ECKD disk pool
                eckdpool1 for guest , then set IPL 0100 in guest's user
                directory, and it will create 0101 with 200000 blocks from
-               FBA disk pool fbapool1, and formated with ext3.
+               FBA disk pool fbapool1, and formated with ext3. As for the third
+               case, if the disk_pool isn't configured in configure file, the
+               default value is None, the disk_pool here is None, no disk will
+               be created. If it's configured, such as ECKD:eckdpool2, it will
+               create 0102 with size 1g from ECKD disk pool eckdpool2 for guest.
         :param user_profile: (str) the profile for the guest
         :param max_cpu: (int) the maximum number of virtual cpu this user can
                define. The value should be a decimal value between 1 and 64.
@@ -782,8 +794,13 @@ class SDKAPI(object):
                               'for each disk.')
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
-                # 'disk_pool' format check
+                # check 'disk_pool'
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                # remove disk if disk_pool is None
+                if disk_pool is None:
+                    disk_list.remove(disk)
+                    continue
+                # 'disk_pool' format check
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
@@ -921,12 +938,18 @@ class SDKAPI(object):
                'disk_pool': 'ECKD:eckdpool1'},
                {'size': '200000',
                'disk_pool': 'FBA:fbapool1',
-               'format': 'ext3'}]
+               'format': 'ext3'},
+               {'size': '1g',
+                'format': 'ext3'}]
                In this case it will create one disk 0100(in case the vdev
                for root disk is 0100) with size 1g from ECKD disk pool
                eckdpool1 for guest , then set IPL 0100 in guest's user
                directory, and it will create 0101 with 200000 blocks from
-               FBA disk pool fbapool1, and formated with ext3.
+               FBA disk pool fbapool1, and formated with ext3. As for the third
+               case, if the disk_pool isn't configured in configure file, the
+               default value is None, the disk_pool here is None, no disk will
+               be created. If it's configured, such as ECKD:eckdpool2, it will
+               create 0102 with size 1g from ECKD disk pool eckdpool2 for guest.
         """
         if disk_list == [] or disk_list is None:
             # nothing to do
